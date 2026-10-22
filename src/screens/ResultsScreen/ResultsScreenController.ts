@@ -60,7 +60,11 @@ export class ResultsScreenController extends ScreenController {
 	 */
 	private loadLeaderboard(): LeaderboardEntry[] {
 		// TODO: Task 5 - Load leaderboard from localStorage
-		return []; // Placeholder
+		const saved = localStorage.getItem(LEADERBOARD_KEY);
+		if (saved == null) {
+			return [];
+		}
+		return JSON.parse(saved) as LeaderboardEntry[];
 	}
 
 	/**
@@ -68,6 +72,8 @@ export class ResultsScreenController extends ScreenController {
 	 */
 	private saveLeaderboard(entries: LeaderboardEntry[]): void {
 		// TODO: Task 5 - Save leaderboard to localStorage
+		const jsonString = JSON.stringify(entries);
+		localStorage.setItem(LEADERBOARD_KEY, jsonString);
 	}
 
 	/**
