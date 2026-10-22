@@ -55,6 +55,31 @@ export class ResultsScreenController extends ScreenController {
 		this.gameOverSound.play();
 	}
 
+	async showResultsFromServer(finalScore: number): Promise<void> {
+		try {
+			this.model.setFinalScore(finalScore);
+			this.view.updateFinalScore(finalScore);
+
+			const entries = await this.loadLeaderboardFromServer();
+			entries.push({
+				score: finalScore,
+				timestamp: new Date().toLocaleString()
+			});
+			entries.sort((a, b) => b.score - a.score);
+			const top5 = entries.slice(0, MAX_LEADERBOARD_ENTRIES);
+			await this.saveLeaderboardtoServer(top5);
+			this.model.setLeaderboard(top5);
+			this.view.updateLeaderboard(top5);
+
+			this.view.show();
+
+			this.gameOverSound.currentTime = 0;
+			this.gameOverSound.play();
+		} catch (error) {
+			console.error(error);
+		}
+	}
+
 	/**
 	 * Load leaderboard from localStorage
 	 */
@@ -74,6 +99,25 @@ export class ResultsScreenController extends ScreenController {
 		// TODO: Task 5 - Save leaderboard to localStorage
 		const jsonString = JSON.stringify(entries);
 		localStorage.setItem(LEADERBOARD_KEY, jsonString);
+	}
+
+	private async loadLeaderboardFromServer(): Promise<LeaderboardEntry[]> {
+		const response = await fetch("/api/leaderboard");
+		if (!response.ok) {
+			throw new Error("Unable to load leaderboard");
+		}
+		return (await response.json()) as LeaderboardEntry[];
+	}
+
+	private async saveLeaderboardtoServer(entries: LeaderboardEntry[]): Promise<void> {
+		const response = await fetch("/api/leaderboard", {
+			method: "POST", 
+			headers: {"Content-Type": "application/json"},
+			body: JSON.stringify(entries)
+		});
+		if (!response.ok) {
+			throw new Error ("Unable to save leaderboard");
+		}
 	}
 
 	/**
